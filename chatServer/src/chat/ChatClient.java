@@ -1,5 +1,17 @@
 package chat;
 
+/**
+ * 	@author Grant Toepfer
+ *  @class CSE 223
+ *  @assignment Programming Assignment 5
+ *  @date 5/30/2014
+ * 
+ * 	@description 
+ * 	Chat client connects to the IP address of the server and opens
+ * 	up a GUI to chat with the host.
+ * 
+ */
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -19,8 +31,9 @@ import javax.swing.JTextField;
 import javax.swing.text.DefaultCaret;
 
 public class ChatClient {
+	private static final int PORT = 9898;
 	private PrintWriter out;
-	private static BufferedReader in;
+	private BufferedReader in;
 	public JFrame frame = new JFrame("Chat");
 	private JTextField dataField = new JTextField(40);
 	private JTextArea messageArea = new JTextArea(8, 30);
@@ -28,17 +41,25 @@ public class ChatClient {
 	private String identity;
 	
 	public ChatClient() {
-		messageArea.setEditable(false);
+		
 		frame.add(dataField, BorderLayout.SOUTH);
 		frame.add(new JScrollPane(messageArea), BorderLayout.CENTER);
 		frame.setMinimumSize(new Dimension(384, 288));
+		frame.setLocationRelativeTo(null);
+		
+		messageArea.setEditable(false);
 		messageArea.setLineWrap(true);
 		messageArea.setWrapStyleWord(true);
+		messageArea.setBackground(null);
+		messageArea.setBorder(null);
+		
 		DefaultCaret caret = (DefaultCaret) messageArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		
 		// Add Listeners
 		dataField.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//handles sending text, event driven.
 				String output = dataField.getText();
 				dataField.setText("");
 				out.println(output);
@@ -56,7 +77,7 @@ public class ChatClient {
 				frame.setVisible(false);
 			}
 		});
-		frame.pack();
+		
 		try {
 			connectToServer();
 			new Inbound(socket, messageArea, frame, identity).start();
@@ -77,15 +98,17 @@ public class ChatClient {
 				JOptionPane.QUESTION_MESSAGE)) == null)
 			System.exit(0);
 		// Make connection and initialize streams
-		socket = new Socket(serverAddress, 9898);
+		socket = new Socket(serverAddress, PORT);
 		in = new BufferedReader(new InputStreamReader(
 				socket.getInputStream()));
 		out = new PrintWriter(socket.getOutputStream(), true);
+		//gets their identity
 		identity = in.readLine();
 		out.println(getIdentity());
 	}
 	
 	private String getIdentity() {
+		//gets your identity to print out for Server
 		String identity;
 		if((identity = JOptionPane.showInputDialog(null,
 				"Identify yourself!", "Identity",
@@ -95,7 +118,7 @@ public class ChatClient {
 		return null;
 	}
 	
-	private static class Inbound extends Thread {
+	private class Inbound extends Thread {
 		private Socket socket;
 		private JTextArea textArea;
 		private String identity;
@@ -111,9 +134,11 @@ public class ChatClient {
 		
 		public void run() {
 			try {
+				
 				frame.setTitle("Chat: " + identity);
-				in.readLine();
+				in.readLine();//swallows "Identify yourself!" line
 				while(true) {
+					//updates textArea until close
 					String input = in.readLine();
 					if(input == null) {
 						break;
@@ -123,9 +148,10 @@ public class ChatClient {
 			}
 			catch(IOException e) {}
 			finally {
+				//if host exits, closes the socket and reports.
 				try {
 					socket.close();
-					textArea.append("Connection closed.");
+					textArea.append("Connection closed.\n");
 				}
 				catch(IOException e) {}
 			}
