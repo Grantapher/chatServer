@@ -42,6 +42,7 @@ public class ChatClient {
 	
 	public ChatClient() {
 		
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		frame.add(dataField, BorderLayout.SOUTH);
 		frame.add(new JScrollPane(messageArea), BorderLayout.CENTER);
 		frame.setMinimumSize(new Dimension(384, 288));

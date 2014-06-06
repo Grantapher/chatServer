@@ -39,18 +39,17 @@ import javax.swing.text.DefaultCaret;
 
 public class ChatServer extends Thread {
 	private static final int PORT = 9898;
+	private static Chatlog log;
 	private JFrame frame = new JFrame("Chat");
 	private JTextField dataField = new JTextField(40);
 	private JTextArea messageArea = new JTextArea(8, 30);
 	private Inbound inThread;
-	private String myIdentity;
+	private static String myIdentity;
 	private PrintWriter out;
 	private String theirIdentity;
 	
 	public ChatServer(final Socket socket, final int clientNumber,
 			final String identity) {
-		
-		myIdentity = identity;
 		
 		// Layout GUI
 		frame.add(dataField, BorderLayout.SOUTH);
@@ -103,6 +102,10 @@ public class ChatServer extends Thread {
 		out.println("Identify yourself!");
 		inThread = new Inbound(socket, clientNumber, messageArea, frame);
 		inThread.start();
+	}
+	
+	private static void log(String in) {
+		log.append(in);
 	}
 	
 	private static void getIP() {
@@ -239,6 +242,8 @@ public class ChatServer extends Thread {
 				BufferedReader in = new BufferedReader(
 						new InputStreamReader(socket.getInputStream()));
 				theirIdentity = in.readLine();
+				log("Connected to \"" + theirIdentity + "\" at port \""
+						+ socket.getPort() + "\".");
 				//client will send their identity when the outbound connection is established
 				out.println("You are connected to " + myIdentity + "!");
 				textArea.append("You are connected to " + theirIdentity
@@ -259,12 +264,12 @@ public class ChatServer extends Thread {
 				try {
 					socket.close();
 					textArea.append("Connection closed.\n");
+					log("Closed connection with " + theirIdentity + ".");
 				}
 				catch(IOException e) {}
 			}
 			
 		}
-		
 	}
 	
 	//Main initializes the ServerSocket and grabs incoming connections
@@ -283,17 +288,17 @@ public class ChatServer extends Thread {
 					JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
 		}
-		String identity;	//holds your name to display to client
-		if((identity = JOptionPane.showInputDialog(null,
+		if((myIdentity = JOptionPane.showInputDialog(null,
 				"What is your name?", "Identity",
 				JOptionPane.QUESTION_MESSAGE)) == null)
 			System.exit(0);
 		getIP();
-		System.out.println("The server is running.");
+		log = new Chatlog(myIdentity);
+		log("The server is running.");
 		try {
 			while(true) {
-				new ChatServer(listener.accept(), ++clientNumber, identity)
-						.start();
+				new ChatServer(listener.accept(), ++clientNumber,
+						myIdentity).start();
 				//grabs all incoming connections and 
 				//relays them to new GUI and connection
 			}
